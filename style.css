@@ -1,19 +1,49 @@
+.fredericka-the-great-regular {
+  font-family: "Fredericka the Great", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+body{
+  font-family:Helvetica, Arial, sans-serif;
+}
+
 #game {
   text-align: center;
 }
 #board {
   display: grid;
-  grid-template-columns: repeat(3, 100px);
-  grid-template-rows: repeat(3, 100px);
+  grid-template-areas: '0 1 2' '3 4 5' '6 7 8';
   gap: 5px;
+  margin:auto;
+  width:min-content;
+  padding:20px;
+  padding-top:28px;
+  border-radius:15px;
+  font-family:"Fredericka the Great", Arial, sans-serif;
+}
+#chalkboard{
+  background-image: url("chalkboard.jpg");
+  background-size:cover;
+  width:557px;
+  height:372px;
+  margin:auto;
 }
 .cell {
   width: 100px;
   height: 100px;
-  border: 1px solid #000;
-  display: flex;
+  border: 1px solid #FFF;
   justify-content: center;
   align-items: center;
-  font-size: 2rem;
+  font-size: 5rem;
   cursor: pointer;
+  color:white;
+}
+#reset-btn{
+  border:none;
+  border-radius:10px;
+  padding:20px;
+}
+#reset-btn:hover{
+  background-color:#6c6c6c;
 }
