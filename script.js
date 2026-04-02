@@ -36,6 +36,7 @@ initButton.addEventListener('click', initGame);
 joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 
+
 cells.forEach((cell) => {
     cell.addEventListener('click', (event) => {
         let index = event.target.id;
@@ -128,7 +129,7 @@ async function updateBoard(index) {
 
     // check for valid room id & currentPlayer
     if (currentRoom === -1 || currentPlayer != thisPlayer) {
-        console.log('invalid currentRome / currentPlayer');
+        console.log('invalid currentRoom / currentPlayer');
 
         return;
     }
