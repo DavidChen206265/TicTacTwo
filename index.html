@@ -14,31 +14,43 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredericka+the+Great&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </head>
 
 <body>
-    <div id="game">
         <h1>Tic Tac Two</h1>
         <div id="chalkboard">
-        <div id="board">
-            <div class="cell" id="0"></div>
-            <div class="cell" id="1"></div>
-            <div class="cell" id="2"></div>
-            <div class="cell" id="3"></div>
-            <div class="cell" id="4"></div>
-            <div class="cell" id="5"></div>
-            <div class="cell" id="6"></div>
-            <div class="cell" id="7"></div>
-            <div class="cell" id="8"></div>
+            <div id="board">
+                <div class="cell" id="0"></div>
+                <div class="cell" id="1"></div>
+                <div class="cell" id="2"></div>
+                <div class="cell" id="3"></div>
+                <div class="cell" id="4"></div>
+                <div class="cell" id="5"></div>
+                <div class="cell" id="6"></div>
+                <div class="cell" id="7"></div>
+                <div class="cell" id="8"></div>
+            </div>
         </div>
-        <button id="init-btn">Init Game</button>
-        <button id="join-btn">Join Game</button>
-        <button id="exit-btn">Exit Game</button>
-        <button id="reset-btn">Reset Game</button>
-        <input type="number" id="roomInput">
-        <input type="text" id="nameInput">
+        <br>
+        <div id="buttonBoard">
+            <button id="init-btn" class="Buttons">Init Game</button>
+            <button id="join-btn" class="Buttons">Join Game</button>
+            <button id="exit-btn" class="Buttons">Exit Game</button>
+            <button id="reset-btn" class="Buttons">Reset Game</button>
+            <span id="roomInputBox" class="Buttons">
+                <span>Input</span>
+                <input type="number" id="roomInput">
+            </span>
+        </div>
+        <svg style="display: none;">
+            <filter id="chalk-filter">
+              <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="5" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+            </filter>
+          </svg>
+
         <h2 id="winner-display">Winner: </h2>
-    </div>
 </body>
 
 </html>

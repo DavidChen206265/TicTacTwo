@@ -7,9 +7,11 @@
 body{
   font-family:Helvetica, Arial, sans-serif;
 }
-
-#game {
-  text-align: center;
+h1{
+  text-align:center;
+}
+#winner-display{
+  text-align:center;
 }
 #board {
   display: grid;
@@ -30,20 +32,41 @@ body{
   margin:auto;
 }
 .cell {
-  width: 100px;
-  height: 100px;
-  border: 1px solid #FFF;
+  width: 98px;
+  height: 98px;
+  border: 2px solid #FFF;
+  filter: url(#chalk-filter);
   justify-content: center;
   align-items: center;
   font-size: 5rem;
   cursor: pointer;
   color:white;
+  text-align:center;
 }
-#reset-btn{
+#buttonBoard{
+  text-align:center;
+}
+#roomInputBox{
+  display:inline-grid;
+  grid-template-rows:2;
+  height:29px;
+  transform:translateY(-4.5px);
+  border-radius:10px;
+  padding:10px;
+}
+#roomInput{
+  display:inline-block;
+  border-radius:0px;
+  border:none;
+}
+.Buttons{
   border:none;
   border-radius:10px;
-  padding:20px;
+  padding:17px;
+  background-color:rgb(69, 153, 69);
+  border:3px #cab34d solid;
+  font-weight:bold;
 }
-#reset-btn:hover{
-  background-color:#6c6c6c;
+.Buttons:hover:not(#roomInputBox){
+  background-color:rgb(7, 89, 7)
 }
