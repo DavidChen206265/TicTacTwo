@@ -15,6 +15,7 @@ const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
 const nameButton = document.getElementById('name-btn');
 const roomInput = document.getElementById("roomInput");
+const confettiButton = document.getElementById("confettibtn");
 
 // timer variable for syncWithServer()
 let counter = '';
@@ -46,6 +47,7 @@ joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 exitButton.addEventListener('click', exitGame);
 nameButton.addEventListener('click', updateName);
+confettiButton.addEventListener('click', launchConfetti);
 
 // cells
 cells.forEach((cell) => {
@@ -54,6 +56,20 @@ cells.forEach((cell) => {
         updateBoard(index);
     });
 });
+
+function launchConfetti(winner){
+    for(let i = 0; i < 100; i++){
+    confetti({
+        particleCount: 6,
+        spread: 170,
+        origin: { y: 0, x: Math.random() },
+        angle:270,
+        startVelocity:(Math.random() * 48 - 5),
+        ticks:300
+      });
+    }
+}
+
 
 // returns the current number of rooms (rows) in the Game table
 async function getRoomNumber() {
@@ -247,6 +263,7 @@ async function updateBoard(index) {
 
             if (board[a] === thisPlayer && board[a] === board[b] && board[a] === board[c]) {
                 winner = thisPlayer;
+                launchConfetti();
             } // if
         } // for i
 
