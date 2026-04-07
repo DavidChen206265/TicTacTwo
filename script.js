@@ -9,7 +9,9 @@ const cells = document.querySelectorAll('.cell');
 const initButton = document.getElementById('init-btn');
 const joinButton = document.getElementById('join-btn');
 const resetButton = document.getElementById('reset-btn');
+const exitButton = document.getElementById('exit-btn');
 const winnerDisplay = document.getElementById('winner-display');
+const roomDisplay = document.getElementById('room-display');
 
 // timer
 let counter = '';
@@ -35,6 +37,7 @@ let gameWinner = '';
 initButton.addEventListener('click', initGame);
 joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
+exitButton.addEventListener('click', exitGame);
 
 cells.forEach((cell) => {
     cell.addEventListener('click', (event) => {
@@ -79,8 +82,15 @@ async function initGame() {
         console.error('Can not init a room');
     }
 
+    // check for player name
+    if (thisPlayerName == '') {
+        thisPlayerName = 'playerX';
+    }
+
+    players = [thisPlayerName, '']
+
     // add a new room (row) into the table
-    const { data, error } = await supabase.from("Game").insert({ room: newRoom, board: board, currentPlayer: 'X', players: ['X'], winner: '', vote: ['', ''], message: '' }).select();
+    const { data, error } = await supabase.from("Game").insert({ room: newRoom, board: board, currentPlayer: 'X', players: players, winner: '', vote: ['', ''], message: '' }).select();
 
     // check for errors
     if (error) {
@@ -92,6 +102,9 @@ async function initGame() {
     currentRoom = newRoom;
     currentPlayer = 'X';
     thisPlayer = 'X';
+
+    // display current room
+    roomDisplay.innerHTML = 'Room: ' + currentRoom;
 
     // start timer
     counter = window.setInterval(() => syncWithServer(currentRoom), 1000);
@@ -112,11 +125,45 @@ async function joinRoom() {
         return;
     }
 
+    // check for empty spaces in the room
+    let roomData = await getRoomData(room);
+
+    if (roomData.players[0] == '') {
+        console.log('join as player X');
+
+        thisPlayer = 'X';
+
+        if (thisPlayerName == '') {
+            thisPlayerName = 'playerX';
+        }
+
+        roomData.players[0] = thisPlayerName;
+    } else if (roomData.players[1] == '') {
+        console.log('join as player O');
+
+        thisPlayer = 'O';
+
+        if (thisPlayerName == '') {
+            thisPlayerName = 'playerO';
+        }
+
+        roomData.players[1] = thisPlayerName;
+    } else {
+        console.warn('Room ' + room + ' is full!');
+        return;
+    }
+
     currentRoom = room;
-    thisPlayer = 'O';
+
+    // update server
+    const { data, error } = await supabase.from("Game").update({ players: roomData.players })
+        .eq('room', currentRoom).select();
 
     await syncWithServer(currentRoom);
     counter = window.setInterval(() => syncWithServer(currentRoom), 1000);
+
+    // display current room
+    roomDisplay.innerHTML = 'Room: ' + currentRoom;
 
     console.log('joined room ' + room);
 }
@@ -128,7 +175,7 @@ async function updateBoard(index) {
 
     // check for valid room id & currentPlayer
     if (currentRoom === -1 || currentPlayer != thisPlayer) {
-        console.log('invalid currentRome / currentPlayer');
+        console.log('invalid currentRoom / currentPlayer');
 
         return;
     }
@@ -193,8 +240,9 @@ async function syncWithServer(room) {
     let data = await getRoomData(room);
 
     if (data) {
-        console.log('server data currentPlayer: ', data.currentPlayer);
-        console.log('server data board: ', data.board);
+        // console.log('server data currentPlayer: ', data.currentPlayer);
+        // console.log('server data board: ', data.board);
+        console.log('server players in room: ', data.players);
         console.log('sync success');
 
     } else {
@@ -205,6 +253,9 @@ async function syncWithServer(room) {
     // update board & currentPlayer
     board = data.board;
     currentPlayer = data.currentPlayer;
+    players = data.players;
+    vote = data.vote;
+    message = data.message;
 
     for (let i = 0; i < 9; i++) {
         cells[i].innerHTML = data.board[i];
@@ -220,8 +271,46 @@ async function syncWithServer(room) {
 
 async function resetGame() {
     currentPlayer = 'X';
-    thisPlayer = 'X';
     board = ['', '', '', '', '', '', '', '', ''];
     const { data, error } = await supabase.from("Game").update({ board: board, currentPlayer: currentPlayer, winner: '', vote: ['', ''], message: '' })
         .eq('room', currentRoom).select();
+}
+
+async function exitGame() {
+
+    // reset all client variables
+    currentPlayer = '';
+    board = ['', '', '', '', '', '', '', '', ''];
+    vote = ['', ''];
+    message = '';
+    gameWinner = '';
+
+    if (thisPlayerName == players[0]) {
+        players[0] = '';
+        console.warn('playerX exits');
+
+    } else if (thisPlayerName == players[1]) {
+        players[1] = '';
+        console.warn('playerO exits');
+
+    } else {
+        console.warn('player does not match');
+
+    }
+
+    // update status
+    const { data, error } = await supabase.from("Game").update({ players: players, vote: ['', ''], message: '' })
+        .eq('room', currentRoom).select();
+
+    // end counter, stop sync with server
+    window.clearInterval(counter);
+
+    players = ['', ''];
+    thisPlayer = '';
+    thisPlayerName = '';
+    currentRoom = -1;
+
+    roomDisplay.innerHTML = "Room:";
+
+    console.log('Exit from room');
 }
