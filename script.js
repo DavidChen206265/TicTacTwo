@@ -13,6 +13,8 @@ const resetButton = document.getElementById('reset-btn');
 const exitButton = document.getElementById('exit-btn');
 const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
+const nameButton = document.getElementById('name-btn');
+const roomInput = document.getElementById("roomInput");
 
 // timer variable for syncWithServer()
 let counter = '';
@@ -43,6 +45,7 @@ initButton.addEventListener('click', initGame);
 joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 exitButton.addEventListener('click', exitGame);
+nameButton.addEventListener('click', updateName);
 
 // cells
 cells.forEach((cell) => {
@@ -88,11 +91,13 @@ async function getRoomData(room) {
 // initialize the game (create a new room)
 async function initGame() {
 
+    lock();
     // get the new room's index
     let newRoom = await getRoomNumber();
 
     if (!newRoom) {
         console.error('Can not init a room');
+        unlock();
     }
 
     // check for player name
@@ -109,6 +114,7 @@ async function initGame() {
     // check for errors
     if (error) {
         console.error('Error fetching data:', error.message);
+        unlock();
         return;
     }
 
@@ -131,14 +137,19 @@ async function initGame() {
 // join an existing room
 async function joinRoom() {
 
+    lock();
     // get the room number from the input
-    let room = document.getElementById("roomInput").value;
+    let room = roomInput.value;
+    if(room == ""){
+        room = 0;
+    }
 
     // check for valid room id
     let maxRoom = (await getRoomNumber()) - 1;
 
     if (room > maxRoom) {
-        console.warn('room does not exist');
+        alert('Room does not exist');
+        unlock();
         return;
     }
 
@@ -172,7 +183,8 @@ async function joinRoom() {
     } else {
 
         // reject the player to join this room if the room is full
-        console.warn('Room ' + room + ' is full!');
+        alert('Room ' + room + ' is full!');
+        unlock();
         return;
     }
 
@@ -345,11 +357,46 @@ async function exitGame() {
 
     players = ['', ''];
     thisPlayer = '';
-    thisPlayerName = '';
+    if(thisPlayerName == "playerX" || thisPlayerName == "playerO"){
+        thisPlayerName = '';
+    }
+
     currentRoom = -1;
 
     // reset roomDisplay
     roomDisplay.innerHTML = "Room:";
 
     console.log('Exit from room');
+    unlock();
+}
+
+function unlock(){
+    initButton.addEventListener('click', initGame);
+    joinButton.addEventListener('click', joinRoom);
+    initButton.style.backgroundColor = "rgb(69, 153, 69)";
+    joinButton.style.backgroundColor = "rgb(69, 153, 69)";
+}
+
+function lock(){
+    initButton.removeEventListener('click', initGame);
+    joinButton.removeEventListener('click', joinRoom);
+    initButton.style.backgroundColor = "#999";
+    joinButton.style.backgroundColor = "#999";
+}
+
+async function updateName(){
+    thisPlayerName = roomInput.value;
+    if(currentRoom != -1){
+        let currentNames = [];
+        if(thisPlayer == "X"){
+            players[0] = thisPlayerName;
+        }else{
+            players[1] = thisPlayerName;
+        }
+
+        const { data, error } = await supabase.from("Game").update({ players: players })
+        .eq('room', currentRoom).select();
+
+        await syncWithServer(currentRoom);
+    }
 }
