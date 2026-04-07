@@ -39,6 +39,7 @@ joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 exitButton.addEventListener('click', exitGame);
 
+
 cells.forEach((cell) => {
     cell.addEventListener('click', (event) => {
         let index = event.target.id;
