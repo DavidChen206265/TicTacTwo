@@ -1,10 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
+// connect to supabase project
 const supabaseUrl = "https://pyoiawasdbkiifrpzrjd.supabase.co";
 const supabaseKey = "sb_publishable_K29_2-qfcStEZOOMv7bksA_d238a-kN";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ui
+// ui elements
 const cells = document.querySelectorAll('.cell');
 const initButton = document.getElementById('init-btn');
 const joinButton = document.getElementById('join-btn');
@@ -13,33 +14,37 @@ const exitButton = document.getElementById('exit-btn');
 const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
 
-// timer
+// timer variable for syncWithServer()
 let counter = '';
+let syncInterval = 1000; // the interval to update the room variables to the states of server
 
-// game
-let currentRoom = -1;
-let currentPlayer = '';
-let thisPlayer = '';
-let thisPlayerName = '';
-let board = ['', '', '', '', '', '', '', '', ''];
-let players = ['', ''];
-let vote = ['', ''];
+// room variables (corresponding to columns in the Game table, they will be updated in syncWithServer(currentRoom))
+let currentPlayer = ''; // the side of player who should make the next move; value: 'X' or 'O'
+let board = ['', '', '', '', '', '', '', '', '']; // value: '', 'X', or 'O'
+let players = ['', '']; // players' names; players[0] = name of X side player; players[1] = name of O side player
+let vote = ['', '']; 
 let message = '';
+let winner = ''; // winner of game; value: 'X' or 'O'
+
+// client variable
+let currentRoom = -1; // the current room number (the index/row number in the Game table)
+let thisPlayer = ''; // the side of this client; value: 'X' or 'O'
+let thisPlayerName = ''; // name of this client, can be customized
+
 const winPatterns = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
     [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6]              // Diagonals
+    [0, 4, 8], [2, 4, 6]             // Diagonals
 ];
-let gameWinner = '';
-
 
 // add eventListeners
+// buttons
 initButton.addEventListener('click', initGame);
 joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 exitButton.addEventListener('click', exitGame);
 
-
+// cells
 cells.forEach((cell) => {
     cell.addEventListener('click', (event) => {
         let index = event.target.id;
@@ -47,7 +52,7 @@ cells.forEach((cell) => {
     });
 });
 
-
+// returns the current number of rooms (rows) in the Game table
 async function getRoomNumber() {
     const { data, error } = await supabase.from("Game").select();
 
@@ -61,6 +66,12 @@ async function getRoomNumber() {
     return data.length;
 } // getRoomNumber
 
+
+// returns a specific row of the Game table (the data of the specific room)
+// returning pattern: 
+//          call:       getRoomData(12);
+//          return:     { room: 12, board: [,,X,,O,O,X,,], currentPlayer: 'X', players: ['playerX','playerO'], winner: '', vote: ['', ''], message: '' }
+// takes in the room number 
 async function getRoomData(room) {
     const { data, error } = await supabase.from("Game").select().eq('room', room);
 
@@ -74,6 +85,7 @@ async function getRoomData(room) {
     return data[0];
 } // getRoomData
 
+// initialize the game (create a new room)
 async function initGame() {
 
     // get the new room's index
@@ -88,6 +100,7 @@ async function initGame() {
         thisPlayerName = 'playerX';
     }
 
+    // initialize players
     players = [thisPlayerName, '']
 
     // add a new room (row) into the table
@@ -99,7 +112,7 @@ async function initGame() {
         return;
     }
 
-    // set current room & current player
+    // initialize current room & current player
     currentRoom = newRoom;
     currentPlayer = 'X';
     thisPlayer = 'X';
@@ -108,14 +121,17 @@ async function initGame() {
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
 
     // start timer
-    counter = window.setInterval(() => syncWithServer(currentRoom), 1000);
+    // synchronize with server every syncInterval
+    counter = window.setInterval(() => syncWithServer(currentRoom), syncInterval);
 
     console.log('New room is created: \n', data[0]);
     return data[0];
 } // initGame
 
+// join an existing room
 async function joinRoom() {
 
+    // get the room number from the input
     let room = document.getElementById("roomInput").value;
 
     // check for valid room id
@@ -126,10 +142,12 @@ async function joinRoom() {
         return;
     }
 
-    // check for empty spaces in the room
+    // check for empty spaces in the room and assign a side (X or O) to the new player
     let roomData = await getRoomData(room);
 
     if (roomData.players[0] == '') {
+
+        // assign the new player to X side if X does not exist
         console.log('join as player X');
 
         thisPlayer = 'X';
@@ -140,6 +158,8 @@ async function joinRoom() {
 
         roomData.players[0] = thisPlayerName;
     } else if (roomData.players[1] == '') {
+
+        // assign the new player to O side if X exists
         console.log('join as player O');
 
         thisPlayer = 'O';
@@ -150,18 +170,23 @@ async function joinRoom() {
 
         roomData.players[1] = thisPlayerName;
     } else {
+
+        // reject the player to join this room if the room is full
         console.warn('Room ' + room + ' is full!');
         return;
     }
 
+    // put the player into room
     currentRoom = room;
 
-    // update server
+    // update server side player info
     const { data, error } = await supabase.from("Game").update({ players: roomData.players })
         .eq('room', currentRoom).select();
 
     await syncWithServer(currentRoom);
-    counter = window.setInterval(() => syncWithServer(currentRoom), 1000);
+
+    // start the timer to sync with server
+    counter = window.setInterval(() => syncWithServer(currentRoom), syncInterval);
 
     // display current room
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
@@ -169,10 +194,8 @@ async function joinRoom() {
     console.log('joined room ' + room);
 }
 
-// make a move and update board
+// update the room when thisPlayer makes a move
 async function updateBoard(index) {
-    console.log('currentPlayer - ' + currentPlayer + ' thisPlayer - ' + thisPlayer);
-
 
     // check for valid room id & currentPlayer
     if (currentRoom === -1 || currentPlayer != thisPlayer) {
@@ -181,21 +204,22 @@ async function updateBoard(index) {
         return;
     }
 
-    if (gameWinner != '') {
+    // check for whether the game is ended
+    if (winner != '') {
         console.log('Game is ended');
         return;
     }
 
     await syncWithServer(currentRoom);
 
-    let winner = '';
+    // check for whether the place is empty and update the board
+    if (board[index] === '') { 
 
-    // update board
-    if (board[index] === '') {
-        console.log('board updated at index ' + index);
-
+        // update the board
         board[index] = currentPlayer;
         cells[index].innerHTML = currentPlayer;
+
+        console.log('board updated at index ' + index);
 
         // check for tie
         for (let i = 0; i < 9; i++) {
@@ -215,15 +239,16 @@ async function updateBoard(index) {
         } // for i
 
     } else {
-        console.log('clicked on existing X or O');
 
+        // reject the move if clicked on an existing X or O
+        console.log('clicked on existing X or O');
         return;
     }
 
-    // update client
+    // update client side's currentPlayer
     currentPlayer = (currentPlayer === 'X' ? 'O' : 'X');
 
-    // update server
+    // update server (upload the client's state to server)
     const { data, error } = await supabase.from("Game").update({ board: board, currentPlayer: currentPlayer, winner: winner })
         .eq('room', currentRoom).select();
 
@@ -237,12 +262,12 @@ async function updateBoard(index) {
 
 } // updateBoard
 
+// synchronize the client variables to the current stage of the room on server
+// takes in the room number
 async function syncWithServer(room) {
     let data = await getRoomData(room);
 
     if (data) {
-        // console.log('server data currentPlayer: ', data.currentPlayer);
-        // console.log('server data board: ', data.board);
         console.log('server players in room: ', data.players);
         console.log('sync success');
 
@@ -258,6 +283,7 @@ async function syncWithServer(room) {
     vote = data.vote;
     message = data.message;
 
+    // update the cells
     for (let i = 0; i < 9; i++) {
         cells[i].innerHTML = data.board[i];
     }
@@ -265,27 +291,39 @@ async function syncWithServer(room) {
     // display winner
     if (data.winner != '') {
         winnerDisplay.innerHTML = 'Winner ' + data.winner;
-        gameWinner = data.winner;
+        winner = data.winner;
+    } else {
+        winner = '';
     }
 
 } // syncWithServer
 
+// reset the room to the initial setup
 async function resetGame() {
+    // reset client variables
     currentPlayer = 'X';
     board = ['', '', '', '', '', '', '', '', ''];
+    vote = ['', ''];
+    message = '';
+    winner = '';
     const { data, error } = await supabase.from("Game").update({ board: board, currentPlayer: currentPlayer, winner: '', vote: ['', ''], message: '' })
         .eq('room', currentRoom).select();
 }
 
+// exist from the current room
 async function exitGame() {
+
+    // return if player is not in a room
+    if (currentRoom == -1) return;
 
     // reset all client variables
     currentPlayer = '';
     board = ['', '', '', '', '', '', '', '', ''];
     vote = ['', ''];
     message = '';
-    gameWinner = '';
+    winner = '';
 
+    // remove thisPlayer from players
     if (thisPlayerName == players[0]) {
         players[0] = '';
         console.warn('playerX exits');
@@ -296,14 +334,13 @@ async function exitGame() {
 
     } else {
         console.warn('player does not match');
-
     }
 
-    // update status
+    // update server status
     const { data, error } = await supabase.from("Game").update({ players: players, vote: ['', ''], message: '' })
         .eq('room', currentRoom).select();
 
-    // end counter, stop sync with server
+    // end counter, stop to sync with server
     window.clearInterval(counter);
 
     players = ['', ''];
@@ -311,6 +348,7 @@ async function exitGame() {
     thisPlayerName = '';
     currentRoom = -1;
 
+    // reset roomDisplay
     roomDisplay.innerHTML = "Room:";
 
     console.log('Exit from room');
