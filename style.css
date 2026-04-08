@@ -24,12 +24,13 @@ h1{
   border-radius:15px;
   font-family:"Fredericka the Great", Arial, sans-serif;
 }
+
 #chalkboard{
   background-image: url("chalkboard.jpg");
   background-size:cover;
   width:557px;
   height:372px;
-  margin:auto;
+  display:inline-block;
 }
 .cell {
   width: 98px;
@@ -69,4 +70,22 @@ h1{
 }
 .Buttons:hover:not(#roomInputBox){
   background-color:rgb(7, 89, 7)
+}
+#infoboard{
+  color:white;
+  background-image: url("chalkboard.jpg");
+  height:342px;
+  display:inline-block;
+  background-size:100% 100%;
+  width:300px;
+  padding-top:30px;
+}
+.infos{
+  text-align:center;
+}
+#mainboard{
+  display:flex;
+  margin:auto;
+  gap:20px;
+  justify-content:center;
 }

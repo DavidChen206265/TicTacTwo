@@ -19,19 +19,28 @@
 
 <body>
         <h1>Tic Tac Two</h1>
-        <div id="chalkboard">
-            <div id="board">
-                <div class="cell" id="0"></div>
-                <div class="cell" id="1"></div>
-                <div class="cell" id="2"></div>
-                <div class="cell" id="3"></div>
-                <div class="cell" id="4"></div>
-                <div class="cell" id="5"></div>
-                <div class="cell" id="6"></div>
-                <div class="cell" id="7"></div>
-                <div class="cell" id="8"></div>
+            <div id="mainboard">
+            <div id="chalkboard">
+                <div id="board">
+                    <div class="cell" id="0"></div>
+                    <div class="cell" id="1"></div>
+                    <div class="cell" id="2"></div>
+                    <div class="cell" id="3"></div>
+                    <div class="cell" id="4"></div>
+                    <div class="cell" id="5"></div>
+                    <div class="cell" id="6"></div>
+                    <div class="cell" id="7"></div>
+                    <div class="cell" id="8"></div>
+                </div>
             </div>
-        </div>
+            <div id="infoboard">
+                <h2 id="name" class="infos">Name:</h2>
+                <h2 id="xoro" class="infos">You are:</h2>
+                <h2 id="turn" class="infos">Turn:</h2>
+                <h2 id="room-display" class="infos">Room: </h2>
+                <h2 id="winner-display" class="infos"></h2>
+            </div>
+            </div>
         <br>
         <div id="buttonBoard">
             <button id="init-btn" class="Buttons">Init Game</button>
@@ -52,8 +61,8 @@
             </filter>
           </svg>
 
-        <h2 id="room-display">Room: </h2>
-        <h2 id="winner-display">Winner: </h2>
+        
+        
 </body>
 
 </html>

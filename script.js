@@ -16,6 +16,9 @@ const roomDisplay = document.getElementById('room-display');
 const nameButton = document.getElementById('name-btn');
 const roomInput = document.getElementById("roomInput");
 const confettiButton = document.getElementById("confettibtn");
+const nameDisplay = document.getElementById("name");
+const xoro = document.getElementById("xoro");
+const turn = document.getElementById("turn");
 
 // timer variable for syncWithServer()
 let counter = '';
@@ -57,13 +60,16 @@ cells.forEach((cell) => {
     });
 });
 
+
 function launchConfetti(winner){
+    let xvalue = 0;
     for(let i = 0; i < 100; i++){
+    xvalue = Math.random();
     confetti({
         particleCount: 6,
-        spread: 170,
-        origin: { y: 0, x: Math.random() },
-        angle:270,
+        spread: 120,
+        origin: { y: 0, x: xvalue },
+        angle: 315 - (xvalue * 90),
         startVelocity:(Math.random() * 48 - 5),
         ticks:300
       });
@@ -138,7 +144,7 @@ async function initGame() {
     currentRoom = newRoom;
     currentPlayer = 'X';
     thisPlayer = 'X';
-
+    xoro.innerHTML = "You are:" + thisPlayer;
     // display current room
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
 
@@ -205,6 +211,7 @@ async function joinRoom() {
     }
 
     // put the player into room
+    xoro.innerHTML = "You are:" + thisPlayer;
     currentRoom = room;
 
     // update server side player info
@@ -319,7 +326,12 @@ async function syncWithServer(room) {
 
     // display winner
     if (data.winner != '') {
-        winnerDisplay.innerHTML = 'Winner ' + data.winner;
+        if(data.winner == thisPlayer){
+            winnerDisplay.innerHTML = "You win!"
+        }else {
+            winnerDisplay.innerHTML = "You Lose!"
+        }
+        //winnerDisplay.innerHTML = 'Winner ' + data.winner;
         winner = data.winner;
     } else {
         winner = '';
@@ -330,6 +342,7 @@ async function syncWithServer(room) {
 // reset the room to the initial setup
 async function resetGame() {
     // reset client variables
+    winnerDisplay.innerHTML = '';
     currentPlayer = 'X';
     board = ['', '', '', '', '', '', '', '', ''];
     vote = ['', ''];
@@ -341,7 +354,8 @@ async function resetGame() {
 
 // exist from the current room
 async function exitGame() {
-
+    xoro.innerHTML = "You are:";
+    winnerDisplay.innerHTML = '';
     // return if player is not in a room
     if (currentRoom == -1) return;
 
@@ -403,6 +417,7 @@ function lock(){
 
 async function updateName(){
     thisPlayerName = roomInput.value;
+    nameDisplay.innerHTML = "Name: " + thisPlayerName;
     if(currentRoom != -1){
         let currentNames = [];
         if(thisPlayer == "X"){
