@@ -7,13 +7,19 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ui elements
 const cells = document.querySelectorAll('.cell');
+
 const initButton = document.getElementById('init-btn');
 const joinButton = document.getElementById('join-btn');
 const resetButton = document.getElementById('reset-btn');
 const exitButton = document.getElementById('exit-btn');
+const nameButton = document.getElementById('name-btn');
+const messageButton = document.getElementById('message-btn');
+
+const playerDisplay = document.getElementById('player-display');
 const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
-const nameButton = document.getElementById('name-btn');
+const messageDisplay = document.getElementById('message-display');
+
 const roomInput = document.getElementById("roomInput");
 
 // timer variable for syncWithServer()
@@ -26,12 +32,13 @@ let board = ['', '', '', '', '', '', '', '', '']; // value: '', 'X', or 'O'
 let players = ['', '']; // players' names; players[0] = name of X side player; players[1] = name of O side player
 let vote = ['', '']; 
 let message = '';
-let winner = ''; // winner of game; value: 'X' or 'O'
+let winner = ''; // winner of game; value: 'X', 'O', or 'Tie'
 
 // client variable
 let currentRoom = -1; // the current room number (the index/row number in the Game table)
 let thisPlayer = ''; // the side of this client; value: 'X' or 'O'
 let thisPlayerName = ''; // name of this client, can be customized
+let historicalMessages = new Set(); // historical messages
 
 const winPatterns = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
@@ -46,6 +53,7 @@ joinButton.addEventListener('click', joinRoom);
 resetButton.addEventListener('click', resetGame);
 exitButton.addEventListener('click', exitGame);
 nameButton.addEventListener('click', updateName);
+messageButton.addEventListener('click', sendMessage);
 
 // cells
 cells.forEach((cell) => {
@@ -91,13 +99,13 @@ async function getRoomData(room) {
 // initialize the game (create a new room)
 async function initGame() {
 
-    lock();
+    lockButtons();
     // get the new room's index
     let newRoom = await getRoomNumber();
 
     if (!newRoom) {
         console.error('Can not init a room');
-        unlock();
+        unlockButtons();
     }
 
     // check for player name
@@ -114,7 +122,7 @@ async function initGame() {
     // check for errors
     if (error) {
         console.error('Error fetching data:', error.message);
-        unlock();
+        unlockButtons();
         return;
     }
 
@@ -125,6 +133,9 @@ async function initGame() {
 
     // display current room
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
+
+    // update player display
+    playerDisplay.innerHTML = thisPlayerName + '(X)(me) vs empty(O)'
 
     // start timer
     // synchronize with server every syncInterval
@@ -137,7 +148,7 @@ async function initGame() {
 // join an existing room
 async function joinRoom() {
 
-    lock();
+    lockButtons();
     // get the room number from the input
     let room = roomInput.value;
     if(room == ""){
@@ -149,7 +160,9 @@ async function joinRoom() {
 
     if (room > maxRoom) {
         alert('Room does not exist');
-        unlock();
+        unlockButtons();
+        // reset input
+        roomInput.value = '';
         return;
     }
 
@@ -167,6 +180,9 @@ async function joinRoom() {
             thisPlayerName = 'playerX';
         }
 
+        // update player display
+        playerDisplay.innerHTML = thisPlayerName + '(X)(me) vs ' + (roomData.players[1] == '' ? 'empty' : roomData.players[1]) + '(O)';
+
         roomData.players[0] = thisPlayerName;
     } else if (roomData.players[1] == '') {
 
@@ -179,12 +195,17 @@ async function joinRoom() {
             thisPlayerName = 'playerO';
         }
 
+        // update player display
+        playerDisplay.innerHTML = roomData.players[0] + '(X) vs ' + thisPlayerName + '(O)(me)';
+
         roomData.players[1] = thisPlayerName;
     } else {
 
         // reject the player to join this room if the room is full
         alert('Room ' + room + ' is full!');
-        unlock();
+        unlockButtons();
+        // reset input
+        roomInput.value = '';
         return;
     }
 
@@ -202,6 +223,9 @@ async function joinRoom() {
 
     // display current room
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
+
+    // reset input
+    roomInput.value = '';
 
     console.log('joined room ' + room);
 }
@@ -279,8 +303,8 @@ async function updateBoard(index) {
 async function syncWithServer(room) {
     let data = await getRoomData(room);
 
+    // check for sync success
     if (data) {
-        console.log('server players in room: ', data.players);
         console.log('sync success');
 
     } else {
@@ -293,20 +317,39 @@ async function syncWithServer(room) {
     currentPlayer = data.currentPlayer;
     players = data.players;
     vote = data.vote;
-    message = data.message;
 
     // update the cells
     for (let i = 0; i < 9; i++) {
         cells[i].innerHTML = data.board[i];
     }
 
-    // display winner
-    if (data.winner != '') {
-        winnerDisplay.innerHTML = 'Winner ' + data.winner;
-        winner = data.winner;
-    } else {
+    // update winner display
+    if (data.winner == '') {
+        winnerDisplay.innerHTML = '';
         winner = '';
+        
+    } else if (data.winner == 'Tie') {
+        winnerDisplay.innerHTML = 'Tie';
+        winner = data.winner;
+
+    } else {
+        winnerDisplay.innerHTML = 'Winner: ' + data.winner;
+        winner = data.winner;
     }
+
+    // receive message from another player
+    if (data.message != message && data.message != '') {
+        historicalMessages.add(data.message);
+        messageDisplay.innerHTML += '<div class="messageLine">' + data.message + '</div>';
+
+        const { dataNoNeed, error } = await supabase.from("Game").update({ message: '' })
+        .eq('room', currentRoom).select();
+
+        message = '';
+    }
+
+    // update playersDisplay
+    playerDisplay.innerHTML = (data.players[0] == '' ? 'empty' :  data.players[0]) + '(X)' + (thisPlayer == 'X' ? '(me)' : '') + ' vs ' + (data.players[1] == '' ? 'empty' :  data.players[1]) + '(O)' + (thisPlayer == 'O' ? '(me)' : '');
 
 } // syncWithServer
 
@@ -318,9 +361,17 @@ async function resetGame() {
     vote = ['', ''];
     message = '';
     winner = '';
+    
+    // reset winner display
+    winnerDisplay.innerHTML = ''; 
+
+    // reset input
+    roomInput.value = '';
+
     const { data, error } = await supabase.from("Game").update({ board: board, currentPlayer: currentPlayer, winner: '', vote: ['', ''], message: '' })
         .eq('room', currentRoom).select();
-}
+ 
+} // resetGame
 
 // exist from the current room
 async function exitGame() {
@@ -334,6 +385,7 @@ async function exitGame() {
     vote = ['', ''];
     message = '';
     winner = '';
+    historicalMessages = new Set();
 
     // remove thisPlayer from players
     if (thisPlayerName == players[0]) {
@@ -357,37 +409,60 @@ async function exitGame() {
 
     players = ['', ''];
     thisPlayer = '';
+
+    // reset player name if it is a default name
     if(thisPlayerName == "playerX" || thisPlayerName == "playerO"){
         thisPlayerName = '';
     }
 
+    // reset room
+    console.log('Exit from room ' + currentRoom);
     currentRoom = -1;
 
-    // reset roomDisplay
+    // reset displays
     roomDisplay.innerHTML = "Room:";
+    winnerDisplay.innerHTML = '';
+    messageDisplay.innerHTML = '';
+    playerDisplay.innerHTML = '';
 
-    console.log('Exit from room');
-    unlock();
-}
+    // reset input
+    roomInput.value = '';
 
-function unlock(){
+    unlockButtons();
+} // exitGame
+
+function unlockButtons(){
     initButton.addEventListener('click', initGame);
     joinButton.addEventListener('click', joinRoom);
     initButton.style.backgroundColor = "rgb(69, 153, 69)";
     joinButton.style.backgroundColor = "rgb(69, 153, 69)";
-}
+} // unlockButtons
 
-function lock(){
+function lockButtons(){
     initButton.removeEventListener('click', initGame);
     joinButton.removeEventListener('click', joinRoom);
     initButton.style.backgroundColor = "#999";
     joinButton.style.backgroundColor = "#999";
-}
+} // lockButtons
 
 async function updateName(){
+
+    // check for valid usernames
+    if (roomInput.value == players[0] || roomInput.value == players[1] || roomInput.value == 'playerX' || roomInput.value == 'playerO') {
+        
+        alert('Duplicated / default names are not allowed. Please enter a new one.');
+
+        // reset input
+        roomInput.value = '';
+
+        return
+    }
+
+    // change player name
     thisPlayerName = roomInput.value;
+
+    // update server's players data
     if(currentRoom != -1){
-        let currentNames = [];
         if(thisPlayer == "X"){
             players[0] = thisPlayerName;
         }else{
@@ -399,4 +474,28 @@ async function updateName(){
 
         await syncWithServer(currentRoom);
     }
-}
+
+    // reset input
+    roomInput.value = '';
+} // updateName
+
+async function sendMessage() {
+    if (currentRoom == -1) {
+        alert("Can not send a message while you are not in a room.");
+        return;
+    }
+
+    // get the message
+    message = thisPlayerName + ': ' + roomInput.value;
+
+    // send message
+    const { data, error } = await supabase.from("Game").update({ message:  message})
+        .eq('room', currentRoom).select();
+
+    // update message display
+    historicalMessages.add(message);
+    messageDisplay.innerHTML += '<div class="messageLine">' + message + '</div>';
+
+    // reset input
+    roomInput.value = '';
+} // sendMessage
