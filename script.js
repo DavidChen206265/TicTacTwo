@@ -17,11 +17,16 @@ const resetButton = document.getElementById('reset-btn');
 const exitButton = document.getElementById('exit-btn');
 const nameButton = document.getElementById('name-btn');
 const messageButton = document.getElementById('message-btn');
+const confettiButton = document.getElementById("confettibtn");
 
 const playerDisplay = document.getElementById('player-display');
 const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
 const messageDisplay = document.getElementById('message-display');
+const nameDisplay = document.getElementById("name");
+
+const xoro = document.getElementById("xoro");
+const turn = document.getElementById("turn");
 
 const roomInput = document.getElementById("roomInput");
 
@@ -136,6 +141,7 @@ async function initGame() {
     currentRoom = newRoom;
     currentPlayer = 'X';
     thisPlayer = 'X';
+    xoro.innerHTML = "You are:" + thisPlayer;
 
     // display current room
     roomDisplay.innerHTML = 'Room: ' + currentRoom;
@@ -224,6 +230,7 @@ async function joinRoom() {
 
     // put the player into room
     currentRoom = room;
+    xoro.innerHTML = "You are:" + thisPlayer;
 
     // update server side player info
     const { data, error } = await supabase.from("Game").update({ players: roomData.players })
@@ -285,6 +292,7 @@ async function updateBoard(index) {
 
             if (board[a] === thisPlayer && board[a] === board[b] && board[a] === board[c]) {
                 winner = thisPlayer;
+                launchConfetti();
             } // if
         } // for i
 
@@ -438,6 +446,7 @@ async function exitGame() {
     winnerDisplay.innerHTML = '';
     messageDisplay.innerHTML = '';
     playerDisplay.innerHTML = '';
+    xoro.innerHTML = '';
 
     // reset input
     roomInput.value = '';
@@ -539,3 +548,19 @@ async function sendMessage() {
     // reset input
     roomInput.value = '';
 } // sendMessage
+
+
+function launchConfetti(winner){
+    let xvalue = 0;
+    for(let i = 0; i < 100; i++){
+    xvalue = Math.random();
+    confetti({
+        particleCount: 6,
+        spread: 120,
+        origin: { y: 0, x: xvalue },
+        angle: 315 - (xvalue * 90),
+        startVelocity:(Math.random() * 48 - 5),
+        ticks:300
+      });
+    }
+}
