@@ -9,7 +9,7 @@
     <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
     <script type="module" src="script.js"></script>
 
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,11 +34,12 @@
                 </div>
             </div>
             <div id="infoboard">
-                <h2 id="name" class="infos">Name:</h2>
-                <h2 id="xoro" class="infos">You are:</h2>
-                <h2 id="turn" class="infos">Turn:</h2>
+                <h2 id="info-x-name" class="infos">X: empty</h2>
+                <h2 class="infos">vs</h2>
+                <h2 id="info-o-name" class="infos">O: empty</h2>
+                <h2 id="info-turn" class="infos">Turn: </h2>
                 <h2 id="room-display" class="infos">Room: </h2>
-                <h2 id="winner-display" class="infos"></h2>
+                <h2 id="winner-display" class="infos">Winner: </h2>
             </div>
             </div>
         <br>
@@ -52,13 +53,15 @@
             <button id="message-btn" class="Buttons">Send as Message</button>
             <span id="roomInputBox" class="Buttons">
                 <span>Input</span>
-                <input type="text" id="roomInput">
+                <input type="text" id="roomInput" aria-label="Input">
             </span>
             
         </div>
         <h2 id="player-display"></h2>
             <h2>Messages:</h2>
-            <div id="message-display"></div>
+            <div id="message-display">
+                <div class="message-line">System: Welcome.</div>
+            </div>
         <svg style="display: none;">
             <filter id="chalk-filter">
               <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="5" result="noise" />

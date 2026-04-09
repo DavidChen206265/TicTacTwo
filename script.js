@@ -17,16 +17,14 @@ const resetButton = document.getElementById('reset-btn');
 const exitButton = document.getElementById('exit-btn');
 const nameButton = document.getElementById('name-btn');
 const messageButton = document.getElementById('message-btn');
-const confettiButton = document.getElementById("confettibtn");
 
-const playerDisplay = document.getElementById('player-display');
 const winnerDisplay = document.getElementById('winner-display');
 const roomDisplay = document.getElementById('room-display');
 const messageDisplay = document.getElementById('message-display');
-const nameDisplay = document.getElementById("name");
 
-const xoro = document.getElementById("xoro");
-const turn = document.getElementById("turn");
+const infoXName = document.getElementById("info-x-name");
+const infoOName = document.getElementById("info-o-name");
+const infoTurn = document.getElementById("info-turn");
 
 const roomInput = document.getElementById("roomInput");
 
@@ -141,13 +139,9 @@ async function initGame() {
     currentRoom = newRoom;
     currentPlayer = 'X';
     thisPlayer = 'X';
-    xoro.innerHTML = "You are:" + thisPlayer;
 
     // display current room
-    roomDisplay.innerHTML = 'Room: ' + currentRoom;
-
-    // update player display
-    playerDisplay.innerHTML = thisPlayerName + '(X)(me) vs empty(O)'
+    roomDisplay.innerText = 'Room: ' + currentRoom;
 
     // start timer
     // synchronize with server every syncInterval
@@ -176,6 +170,7 @@ async function joinRoom() {
 
     // check for valid room id
     let maxRoom = (await getRoomNumber()) - 1;
+    room = Math.round(room)
 
     if (room < 0 || room > maxRoom) {
         alert('Room does not exist.');
@@ -199,9 +194,6 @@ async function joinRoom() {
             thisPlayerName = 'playerX';
         }
 
-        // update player display
-        playerDisplay.innerHTML = thisPlayerName + '(X)(me) vs ' + (roomData.players[1] == '' ? 'empty' : roomData.players[1]) + '(O)';
-
         roomData.players[0] = thisPlayerName;
     } else if (roomData.players[1] == '') {
 
@@ -213,9 +205,6 @@ async function joinRoom() {
         if (thisPlayerName == '') {
             thisPlayerName = 'playerO';
         }
-
-        // update player display
-        playerDisplay.innerHTML = roomData.players[0] + '(X) vs ' + thisPlayerName + '(O)(me)';
 
         roomData.players[1] = thisPlayerName;
     } else {
@@ -230,7 +219,6 @@ async function joinRoom() {
 
     // put the player into room
     currentRoom = room;
-    xoro.innerHTML = "You are:" + thisPlayer;
 
     // update server side player info
     const { data, error } = await supabase.from("Game").update({ players: roomData.players })
@@ -242,7 +230,7 @@ async function joinRoom() {
     counter = window.setInterval(() => syncWithServer(currentRoom), syncInterval);
 
     // display current room
-    roomDisplay.innerHTML = 'Room: ' + currentRoom;
+    roomDisplay.innerText = 'Room: ' + currentRoom;
 
     // reset input
     roomInput.value = '';
@@ -274,7 +262,7 @@ async function updateBoard(index) {
 
         // update the board
         board[index] = currentPlayer;
-        cells[index].innerHTML = currentPlayer;
+        cells[index].innerText = currentPlayer;
 
         console.log('board updated at index ' + index);
 
@@ -342,20 +330,20 @@ async function syncWithServer(room) {
 
     // update the cells
     for (let i = 0; i < 9; i++) {
-        cells[i].innerHTML = data.board[i];
+        cells[i].innerText = data.board[i];
     }
 
     // update winner display
     if (data.winner == '') {
-        winnerDisplay.innerHTML = '';
+        winnerDisplay.innerText = '';
         winner = '';
         
     } else if (data.winner == 'Tie') {
-        winnerDisplay.innerHTML = 'Tie';
+        winnerDisplay.innerText = 'Tie';
         winner = data.winner;
 
     } else {
-        winnerDisplay.innerHTML = 'Winner: ' + data.winner;
+        winnerDisplay.innerText = 'Winner: ' + data.winner;
         winner = data.winner;
     }
 
@@ -364,14 +352,18 @@ async function syncWithServer(room) {
         historicalMessages.add(data.message);
         messageDisplay.innerHTML += '<div class="messageLine">' + data.message + '</div>';
 
-        const { dataNoNeed, error } = await supabase.from("Game").update({ message: '' })
-        .eq('room', currentRoom).select();
+        await supabase.from("Game").update({ message: '' }).eq('room', currentRoom).select();
 
+        // reset message
         message = '';
     }
 
-    // update playersDisplay
-    playerDisplay.innerHTML = (data.players[0] == '' ? 'empty' :  data.players[0]) + '(X)' + (thisPlayer == 'X' ? '(me)' : '') + ' vs ' + (data.players[1] == '' ? 'empty' :  data.players[1]) + '(O)' + (thisPlayer == 'O' ? '(me)' : '');
+    // update info display 
+    infoXName.innerText = 'X: ' + (data.players[0] == '' ? 'empty' :  data.players[0]);
+    infoOName.innerText = 'O: ' + (data.players[1] == '' ? 'empty' :  data.players[1]);
+    if (thisPlayer == 'X') infoXName.innerText += ' (You)';
+    else infoOName.innerText += ' (You)';
+    infoTurn.innerText = 'Turn: ' + currentPlayer;
 
 } // syncWithServer
 
@@ -385,7 +377,7 @@ async function resetGame() {
     winner = '';
     
     // reset winner display
-    winnerDisplay.innerHTML = ''; 
+    winnerDisplay.innerText = ''; 
 
     // reset input
     roomInput.value = '';
@@ -442,11 +434,12 @@ async function exitGame() {
     currentRoom = -1;
 
     // reset displays
-    roomDisplay.innerHTML = "Room:";
-    winnerDisplay.innerHTML = '';
-    messageDisplay.innerHTML = '';
-    playerDisplay.innerHTML = '';
-    xoro.innerHTML = '';
+    roomDisplay.innerText = "Room:";
+    winnerDisplay.innerText = '';
+    messageDisplay.innerText = '';
+    infoXName.innerText = 'X: empty';
+    infoOName.innerText = 'O: empty';
+    infoTurn.innerText = 'Turn:';
 
     // reset input
     roomInput.value = '';
