@@ -9,6 +9,8 @@
     <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
     <script type="module" src="script.js"></script>
 
+    <link rel="icon" type="image/x-icon" href="icon512_rounded.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,13 +51,12 @@
             <button id="exit-btn" class="Buttons">Exit Game</button>
             <button id="reset-btn" class="Buttons">Reset Game</button>
             <button id="name-btn" class="Buttons">Set Name</button>
-            <button id="confettibtn" class="Buttons">CONFETTI</button>
             <button id="message-btn" class="Buttons">Send as Message</button>
             <span id="roomInputBox" class="Buttons">
                 <span>Input</span>
                 <input type="text" id="roomInput" aria-label="Input">
             </span>
-            
+            <button id="installButton" style="display: none;" class="Buttons">Install App</button>
         </div>
         <h2 id="player-display"></h2>
             <h2>Messages:</h2>
