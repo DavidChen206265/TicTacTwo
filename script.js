@@ -6,6 +6,9 @@ const supabaseKey = "sb_publishable_K29_2-qfcStEZOOMv7bksA_d238a-kN";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ui elements
+const activatedButtonColor = 'rgb(69, 153, 69)';
+const deactivatedButtonColor = '#999';
+
 const cells = document.querySelectorAll('.cell');
 
 const initButton = document.getElementById('init-btn');
@@ -55,13 +58,16 @@ exitButton.addEventListener('click', exitGame);
 nameButton.addEventListener('click', updateName);
 messageButton.addEventListener('click', sendMessage);
 
-// cells
+// init cells
 cells.forEach((cell) => {
     cell.addEventListener('click', (event) => {
         let index = event.target.id;
         updateBoard(index);
     });
 });
+
+// init buttons
+setButtonStateOutsideRoom();
 
 // returns the current number of rooms (rows) in the Game table
 async function getRoomNumber() {
@@ -99,13 +105,13 @@ async function getRoomData(room) {
 // initialize the game (create a new room)
 async function initGame() {
 
-    lockButtons();
+    setButtonStateInsideRoom();
     // get the new room's index
     let newRoom = await getRoomNumber();
 
     if (!newRoom) {
         console.error('Can not init a room');
-        unlockButtons();
+        setButtonStateOutsideRoom();
     }
 
     // check for player name
@@ -122,7 +128,7 @@ async function initGame() {
     // check for errors
     if (error) {
         console.error('Error fetching data:', error.message);
-        unlockButtons();
+        setButtonStateOutsideRoom();
         return;
     }
 
@@ -148,7 +154,7 @@ async function initGame() {
 // join an existing room
 async function joinRoom() {
 
-    lockButtons();
+    setButtonStateInsideRoom();
     // get the room number from the input
     let room = roomInput.value;
     if(room == ""){
@@ -160,7 +166,7 @@ async function joinRoom() {
 
     if (room > maxRoom) {
         alert('Room does not exist');
-        unlockButtons();
+        setButtonStateOutsideRoom();
         // reset input
         roomInput.value = '';
         return;
@@ -203,7 +209,7 @@ async function joinRoom() {
 
         // reject the player to join this room if the room is full
         alert('Room ' + room + ' is full!');
-        unlockButtons();
+        setButtonStateOutsideRoom();
         // reset input
         roomInput.value = '';
         return;
@@ -231,6 +237,7 @@ async function joinRoom() {
 }
 
 // update the room when thisPlayer makes a move
+// takes in the board's index where thisPlayer makes the move 
 async function updateBoard(index) {
 
     // check for valid room id & currentPlayer
@@ -428,23 +435,48 @@ async function exitGame() {
     // reset input
     roomInput.value = '';
 
-    unlockButtons();
+    setButtonStateOutsideRoom();
 } // exitGame
 
-function unlockButtons(){
+function setButtonStateOutsideRoom(){
+
+    // outside room:
+    // activate init & join buttons
+    // deactivate exit & reset & message buttons
+
     initButton.addEventListener('click', initGame);
     joinButton.addEventListener('click', joinRoom);
-    initButton.style.backgroundColor = "rgb(69, 153, 69)";
-    joinButton.style.backgroundColor = "rgb(69, 153, 69)";
-} // unlockButtons
+    initButton.style.backgroundColor = activatedButtonColor;
+    joinButton.style.backgroundColor = activatedButtonColor;
 
-function lockButtons(){
+    exitButton.removeEventListener('click', exitGame);
+    resetButton.removeEventListener('click', resetGame);
+    messageButton.removeEventListener('click', sendMessage);
+    exitButton.style.backgroundColor = deactivatedButtonColor;
+    resetButton.style.backgroundColor = deactivatedButtonColor;
+    messageButton.style.backgroundColor = deactivatedButtonColor;
+} // setButtonStateOutsideRoom
+
+function setButtonStateInsideRoom(){
+
+    // inside room:
+    // activate exit & reset & message buttons
+    // deactivate init & join buttons
+    
     initButton.removeEventListener('click', initGame);
     joinButton.removeEventListener('click', joinRoom);
-    initButton.style.backgroundColor = "#999";
-    joinButton.style.backgroundColor = "#999";
-} // lockButtons
+    initButton.style.backgroundColor = deactivatedButtonColor;
+    joinButton.style.backgroundColor = deactivatedButtonColor;
 
+    exitButton.addEventListener('click', exitGame);
+    resetButton.addEventListener('click', resetGame);
+    messageButton.addEventListener('click', sendMessage);
+    exitButton.style.backgroundColor = activatedButtonColor;
+    resetButton.style.backgroundColor = activatedButtonColor;
+    messageButton.style.backgroundColor = activatedButtonColor;
+} // setButtonStateInsideRoom
+
+// update thisPlayerName
 async function updateName(){
 
     // check for valid usernames
@@ -479,13 +511,14 @@ async function updateName(){
     roomInput.value = '';
 } // updateName
 
+// send a message 
 async function sendMessage() {
     if (currentRoom == -1) {
         alert("Can not send a message while you are not in a room.");
         return;
     }
 
-    // get the message
+    // get the message from roomInput and add thisPlayerName to its head
     message = thisPlayerName + ': ' + roomInput.value;
 
     // send message
