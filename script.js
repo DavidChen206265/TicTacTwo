@@ -156,16 +156,23 @@ async function joinRoom() {
 
     setButtonStateInsideRoom();
     // get the room number from the input
-    let room = roomInput.value;
-    if(room == ""){
-        room = 0;
+    let room = Number(roomInput.value);
+    console.log('test: ' + room);
+    
+    // check for valid room number input
+    if(!room){
+        alert('Please enter a valid room number.');
+        setButtonStateOutsideRoom();
+        // reset input
+        roomInput.value = '';
+        return;
     }
 
     // check for valid room id
     let maxRoom = (await getRoomNumber()) - 1;
 
-    if (room > maxRoom) {
-        alert('Room does not exist');
+    if (room < 0 || room > maxRoom) {
+        alert('Room does not exist.');
         setButtonStateOutsideRoom();
         // reset input
         roomInput.value = '';
