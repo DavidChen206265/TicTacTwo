@@ -1,0 +1,17 @@
+{"theme_color":"#001a9e","background_color":"#0065d1","icons":[{"purpose":"maskable","sizes":"512x512","src":"icon512_maskable.png","type":"image/png"},{"purpose":"any","sizes":"512x512","src":"icon512_rounded.png","type":"image/png"}],"orientation":"any","display":"standalone","dir":"auto","lang":"en-US","start_url":"https://davidchen206265.github.io/TicTacTwo/", "name":"Tic Tac Two","short_name":"TicTacTwo",
+"screenshots": [
+    {
+      "src": "screenshots/screenshot1.png",
+      "sizes": "1142x561",
+      "type": "image/png",
+      "form_factor": "wide",
+      "purpose": "any"
+    },
+    {
+      "src": "screenshots/screenshot2.png",
+      "sizes": "441x830",
+      "type": "image/png",
+      "purpose": "any"
+    }
+]
+}
