@@ -9,6 +9,7 @@ body{
 }
 h1{
   text-align:center;
+  font-family:"Fredericka the Great", Arial, sans-serif;
 }
 #winner-display, #room-display{
   text-align:center;
@@ -79,6 +80,7 @@ h1{
   background-size:100% 100%;
   width:300px;
   padding-top:30px;
+  font-family:"Fredericka the Great", Arial, sans-serif;
 }
 .infos{
   text-align:center;
