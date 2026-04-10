@@ -105,8 +105,7 @@ async function getRoomData(room) {
         console.error('Error fetching data:', error.message);
         return;
     }
-
-    // console.log(data[room]);
+    
     return data[0];
 } // getRoomData
 
@@ -353,10 +352,6 @@ async function syncWithServer(room) {
     }
 
     // receive message from another player
-    console.log('data mess: ' + data.message);
-    
-    console.log('mess: ' + message);
-    
     if (data.message == '') {
         message = '';
     } else if (data.message != message) {
